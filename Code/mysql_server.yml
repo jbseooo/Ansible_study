@@ -1,0 +1,21 @@
+---
+- name: mysql-server & create user 
+  hosts: db
+  tasks:
+    - name: install mysql
+      dnf:
+        name: mysql-server
+        state: latest
+
+    - name: mysql start
+      systemd:
+        name: mysqld
+        state: started
+
+    - name: firewall open
+      firewalld:
+        port: 3306/tcp
+        state: enabled
+
+    - name: mysql connection and create user
+      shell: mysql -uroot -e "create user 'root'@'%' identified by 'password 입력'; grant all privileges on *.* to 'root'@'%'; create database wordpress;"
