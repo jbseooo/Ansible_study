@@ -1,0 +1,73 @@
+---
+- name: wordpress server1
+  hosts: node1
+  tasks:
+    - name: dnf install
+      dnf:
+        name: "{{ item }}"
+        state: latest
+      loop:                           # wordpress 연동을 위한 php 패키지 설치
+        - php
+        - php-common
+        - php-cli
+        - php-curl
+        - php-gd
+        - php-mysqlnd
+        - php-opcache
+        - wget
+        - tar
+        - httpd
+
+    - name: wordpress install
+      get_url:
+        url: https://ko.wordpress.org/wordpress-5.7.8-ko_KR.tar.gz
+        dest: ./
+
+    - name: tar wordpress
+      unarchive:
+        src: wordpress-5.7.8-ko_KR.tar.gz
+        dest: ./
+        remote_src: yes
+
+    - name: file copy
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        remote_src: yes
+
+      loop:
+        - {src: '/root/wordpress/' , dest: '/var/www/html/'}
+        - {src: '/var/www/html/wp-config-sample.php' , dest: '/var/www/html/wp-config.php'}
+    - name: wp-config modify
+      replace:
+        path: /var/www/html/wp-config.php
+        regexp: "{{ item.src }}"
+        replace: "{{ item.dest }}"
+      loop:
+        - {src: "database_name_here" , dest: "wordpress"}
+        - {src: "username_here" , dest: "root"}
+        - {src: "password_here", dest: "password"} # 나의 password 입력
+        - {src: "localhost", dest: "10.0.0.14"}   # mysql-server ip
+
+
+    - name: http modify
+      replace:
+        path: /etc/httpd/conf/httpd.conf
+        regexp: DirectoryIndex index.html
+        replace: DirectoryIndex index.php
+
+
+    - name: systemlctl
+      systemd:
+        name: "{{ item }}"
+        state: started
+
+      loop:
+        - httpd
+
+
+
+    - name: firwall open
+      firewalld:
+        port: 80/tcp
+        state: enabled
