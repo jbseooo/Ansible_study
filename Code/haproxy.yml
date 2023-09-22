@@ -1,0 +1,28 @@
+---
+- name: proxy
+  hosts: master
+  tasks:
+    - name: install proxy
+      dnf:
+        name: haproxy
+        state: latest
+
+    - name: proxy table
+      replace:
+        path: /etc/haproxy/haproxy.cfg
+        regexp: "{{ item.src }}"
+        replace: "{{ item.dest }}"
+      loop:
+         - {src: '.5000',dest:'.50'}
+         - {src: '127.0.0.1:5003',dest: '10.0.0.12:80'}
+         - {src: '126.0.0.1:5004',dest: '10.0.0.13:80'}
+
+    - name: firewall
+      firwalld:
+        port: 80/tcp
+        state: enabled
+
+    - name: systemd
+      systemd:
+        name: haproxy
+        state: stated
