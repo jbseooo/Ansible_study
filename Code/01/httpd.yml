@@ -1,0 +1,24 @@
+---
+- name: install httpd, start httpd, firewall open
+  hosts: http
+  tasks:
+    - name: install httpd
+      dnf:
+        name: httpd
+        state: latest
+
+    - name: copy index.html
+      copy:
+        src: index.html
+        dest: /var/www/html
+
+    - name: start httpd
+      systemd:
+        name: httpd
+        state: started
+
+    - name: firewall open
+      firewalld:
+        port: 80/tcp
+        state: enabled
+~                         
